@@ -1,0 +1,10 @@
+:root {
+    --theme-primary: #008768;
+    --theme-secondary: #30C7A4;
+    --theme-success: #1CA10D;
+    --theme-bg: #F5F5F5;
+}
+body { background-color: var(--theme-bg); }
+.btn-primary, .bg-primary { background-color: var(--theme-primary) !important; border-color: var(--theme-primary) !important; }
+.btn-primary:hover { background-color: #00664e !important; }
+.text-primary { color: var(--theme-primary) !important; }
