@@ -33,6 +33,45 @@ class ProductController extends Controller
         return redirect()->route('products.index')->with('success', 'Product added successfully.');
     }
 
+    /**
+     * Part 9, Step 1: Display product details and transaction history with running balance.
+     */
+    public function show(Request $request, Product $product)
+    {
+        $allTransactions = $product->transactions()
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        // Calculate running balance after each transaction
+        $runningQty = $product->quantity;
+        foreach ($allTransactions as $tx) {
+            $tx->running_balance = $runningQty;
+
+            if ($tx->type === 'stock_in') {
+                $runningQty -= abs($tx->quantity);
+            } elseif ($tx->type === 'stock_out') {
+                $runningQty += abs($tx->quantity);
+            } else {
+                $runningQty -= $tx->quantity;
+            }
+        }
+
+        // Filter by date range if provided
+        $transactions = $allTransactions->filter(function ($tx) use ($request) {
+            if ($request->filled('start_date') && $tx->created_at->toDateString() < $request->start_date) {
+                return false;
+            }
+            if ($request->filled('end_date') && $tx->created_at->toDateString() > $request->end_date) {
+                return false;
+            }
+            return true;
+        });
+
+        return view('products.show', compact('product', 'transactions'));
+    }
+
     public function edit(Product $product)
     {
         return view('products.edit', compact('product'));
@@ -57,5 +96,18 @@ class ProductController extends Controller
     {
         $product->delete();
         return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
+    }
+
+    /**
+     * Part 8, Step 2: AJAX endpoint to load current system quantity for a product.
+     */
+    public function apiProductStock(Product $product)
+    {
+        return response()->json([
+            'id' => $product->id,
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'quantity' => $product->quantity,
+        ]);
     }
 }
